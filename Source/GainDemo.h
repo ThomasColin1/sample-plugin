@@ -51,7 +51,11 @@
 #include "DemoUtilities.h"
 #include "DSPDemos_Common.h"
 
+#include <iostream>
+
 using namespace dsp;
+using namespace std;
+
 
 //==============================================================================
 struct GainDemoDSP
@@ -88,7 +92,6 @@ struct GainDemo    : public Component
     GainDemo()
     {
         addAndMakeVisible (fileReaderComponent);
-        setSize (750, 500);
     }
 
     void resized() override
