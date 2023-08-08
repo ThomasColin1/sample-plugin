@@ -178,8 +178,9 @@ public:
     void handleNoteOn (MidiKeyboardState*, int midiChannel, int midiNoteNumber, float velocity) override
     {
         MidiMessage m (MidiMessage::noteOn (midiChannel, midiNoteNumber, velocity));
-        // cout << fileReaderComponent.getPosition() << endl;
-        // fileReaderComponent.goToPosition(10);
+        fileReaderComponent.goToRelativePosition(midiNoteNumber/127.0);
+        fileReaderComponent.play();
+        cout << midiNoteNumber/127.0 << endl;
         m.setTimeStamp (Time::getMillisecondCounterHiRes() * 0.001);
         sendToOutputs (m);
     }
@@ -187,6 +188,7 @@ public:
     void handleNoteOff (MidiKeyboardState*, int midiChannel, int midiNoteNumber, float velocity) override
     {
         MidiMessage m (MidiMessage::noteOff (midiChannel, midiNoteNumber, velocity));
+        fileReaderComponent.stop();
         m.setTimeStamp (Time::getMillisecondCounterHiRes() * 0.001);
         sendToOutputs (m);
     }

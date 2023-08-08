@@ -179,7 +179,7 @@ private:
         if (transportSource == nullptr)
             stopTimer();
         else
-            startTimerHz (25);
+            startTimer (500);
     }
 
     void loadURL (const URL& u, bool notify = false)
@@ -433,6 +433,11 @@ public:
             transportSource->stop();
             transportSource->setPosition (0);
         }
+    }
+
+    void goToRelativePosition(double relativePosition) {
+        double position = relativePosition * transportSource->getLengthInSeconds();
+        transportSource->setPosition(position);
     }
 
     void init()
