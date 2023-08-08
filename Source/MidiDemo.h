@@ -116,11 +116,12 @@ public:
         
         addLabelAndSetStyle (midiInputLabel);
         addLabelAndSetStyle (midiOutputLabel);
-        addLabelAndSetStyle (incomingMidiLabel);
-        addLabelAndSetStyle (outgoingMidiLabel);
+        // addLabelAndSetStyle (incomingMidiLabel);
+        // addLabelAndSetStyle (outgoingMidiLabel);
 
         midiKeyboard.setName ("MIDI Keyboard");
         addAndMakeVisible (midiKeyboard);
+        addAndMakeVisible (button);
 
         midiMonitor.setMultiLine (true);
         midiMonitor.setReturnKeyStartsNewLine (false);
@@ -129,7 +130,7 @@ public:
         midiMonitor.setCaretVisible (false);
         midiMonitor.setPopupMenuEnabled (false);
         midiMonitor.setText ({});
-        addAndMakeVisible (midiMonitor);
+        // addAndMakeVisible (midiMonitor);
 
         if (! BluetoothMidiDevicePairingDialogue::isAvailable())
             pairButton.setEnabled (false);
@@ -144,6 +145,7 @@ public:
                                                  BluetoothMidiDevicePairingDialogue::open();
                                          });
         };
+        button.onClick = [this] { cout << "clické" << endl; };
         keyboardState.addListener (this);
 
         addAndMakeVisible (midiInputSelector .get());
@@ -226,6 +228,8 @@ public:
         auto y2 = (getHeight() / 2) + ((2 * 24) + (3 * margin) + 64);
         midiMonitor.setBounds (margin, y1,
                                getWidth() - (2 * margin), getHeight() - y2 - margin-50);
+    button.setBounds (margin, y1,
+                               200, getHeight() - y2 - margin-50);
     }
 
     void openDevice (bool isInput, int index)
@@ -518,7 +522,7 @@ private:
     MidiKeyboardComponent midiKeyboard;
     TextEditor midiMonitor  { "MIDI Monitor" };
     TextButton pairButton   { "MIDI Bluetooth devices..." };
-
+    TextButton button { "Modify the pairing" };
 
     AudioFileReaderComponent<GainDemoDSP> fileReaderComponent;
     std::unique_ptr<MidiDeviceListBox> midiInputSelector, midiOutputSelector;
