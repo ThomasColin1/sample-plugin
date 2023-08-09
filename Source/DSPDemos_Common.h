@@ -18,6 +18,8 @@
 */
 
 #pragma once
+#include <iostream>
+using namespace std;
 
 using namespace dsp;
 
@@ -382,6 +384,11 @@ public:
         if (parametersComponent.get() != nullptr)
             parametersComponent->setBounds (r.removeFromTop (parametersComponent->getHeightNeeded()).reduced (20, 0));
     }
+
+    /*double getTime() {
+        return ((jmax (static_cast<double> (e.x), 0.0) / getWidth())
+                                            * thumbnail.getTotalLength());
+    }*/
 
     //==============================================================================
     bool loadURL (const URL& fileToPlay)

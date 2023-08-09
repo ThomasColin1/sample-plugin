@@ -50,6 +50,7 @@
 #include "DemoUtilities.h"
 #include "DSPDemos_Common.h"
 #include <iostream>
+#include <string>
 using namespace std;
 using namespace dsp;
 
@@ -110,6 +111,10 @@ public:
           midiInputSelector  (new MidiDeviceListBox ("Midi Input Selector",  *this, true)),
           midiOutputSelector (new MidiDeviceListBox ("Midi Output Selector", *this, false))
     {
+        noteTimings = new double[128];
+        for(int i=0;i<128;i++) {
+            noteTimings[i] = i/128.0;
+        }
         
         addAndMakeVisible (fileReaderComponent);
 
@@ -122,6 +127,8 @@ public:
         midiKeyboard.setName ("MIDI Keyboard");
         addAndMakeVisible (midiKeyboard);
         addAndMakeVisible (button);
+        addAndMakeVisible (noteEditor);
+        addAndMakeVisible (timeEditor);
 
         midiMonitor.setMultiLine (true);
         midiMonitor.setReturnKeyStartsNewLine (false);
@@ -145,7 +152,10 @@ public:
                                                  BluetoothMidiDevicePairingDialogue::open();
                                          });
         };
-        button.onClick = [this] { cout << "clické" << endl; };
+        button.onClick = [this] { 
+            cout << "clické" << endl; 
+            this->noteTimings[this->noteEditor.getText().getIntValue()] = this->timeEditor.getText().getDoubleValue();
+            };
         keyboardState.addListener (this);
 
         addAndMakeVisible (midiInputSelector .get());
@@ -180,9 +190,11 @@ public:
     void handleNoteOn (MidiKeyboardState*, int midiChannel, int midiNoteNumber, float velocity) override
     {
         MidiMessage m (MidiMessage::noteOn (midiChannel, midiNoteNumber, velocity));
-        fileReaderComponent.goToRelativePosition(midiNoteNumber/127.0);
+        fileReaderComponent.goToRelativePosition(noteTimings[midiNoteNumber]);
         fileReaderComponent.play();
-        cout << midiNoteNumber/127.0 << endl;
+        cout << midiNoteNumber << endl;
+        this->noteEditor.setText(String(midiNoteNumber));
+        //this->timeEditor.setText(String(this->fileReaderComponent.getTime()));
         m.setTimeStamp (Time::getMillisecondCounterHiRes() * 0.001);
         sendToOutputs (m);
     }
@@ -200,7 +212,8 @@ public:
     void resized() override
     {
         auto margin = 10;
-        fileReaderComponent.setBounds(0,getHeight()/4*3, getWidth(),getHeight()/4);
+        fileReaderComponent.setBounds(0,getHeight()-200, getWidth(),200);
+        auto midiHeight=getHeight()-200;
         midiInputLabel.setBounds (margin, margin,
                                   (getWidth() / 2) - (2 * margin), 24);
 
@@ -209,27 +222,31 @@ public:
 
         midiInputSelector->setBounds (margin, (2 * margin) + 24,
                                       (getWidth() / 2) - (2 * margin),
-                                      (getHeight() / 3) - ((4 * margin) + 24 + 24));
+                                      (midiHeight / 3) - ((4 * margin) + 24 + 24));
 
         midiOutputSelector->setBounds ((getWidth() / 2) + margin, (2 * margin) + 24,
                                        (getWidth() / 2) - (2 * margin),
-                                       (getHeight() / 3) - ((4 * margin) + 24 + 24));
+                                       (midiHeight / 3) - ((4 * margin) + 24 + 24));
 
-        pairButton.setBounds (margin, (getHeight() / 3) - (margin + 24),
+        pairButton.setBounds (margin, (midiHeight / 3) - (margin + 24),
                               getWidth() - (2 * margin), 24);
 
-        outgoingMidiLabel.setBounds (margin, getHeight() / 3, getWidth() - (2 * margin), 24);
-        midiKeyboard.setBounds (margin, (getHeight() / 3) + (24 + margin), getWidth() - (2 * margin), 64);
+        outgoingMidiLabel.setBounds (margin, midiHeight / 3, getWidth() - (2 * margin), 24);
+        midiKeyboard.setBounds (margin, (midiHeight / 3) + (24 + margin), getWidth() - (2 * margin), 64);
 
-        incomingMidiLabel.setBounds (margin, (getHeight() / 3) + (24 + (2 * margin) + 64),
+        incomingMidiLabel.setBounds (margin, (midiHeight / 3) + (24 + (2 * margin) + 64),
                                      getWidth() - (2 * margin), 24);
 
-        auto y1 = (getHeight() / 3) + ((2 * 24) + (3 * margin) + 64);
-        auto y2 = (getHeight() / 2) + ((2 * 24) + (3 * margin) + 64);
+        auto y1 = (midiHeight / 3) + ((2 * 24) + (3 * margin) + 64);
+        auto y2 = (midiHeight / 3) + ((2 * 24) + (3 * margin) + 64);
         midiMonitor.setBounds (margin, y1,
-                               getWidth() - (2 * margin), getHeight() - y2 - margin-50);
+                               getWidth() - (2 * margin), midiHeight - y2 - margin-50);
     button.setBounds (margin, y1,
-                               200, getHeight() - y2 - margin-50);
+                               200, midiHeight - y2 - margin);
+    noteEditor.setBounds (margin+220, y1,
+                               200, midiHeight - y2 - margin);
+    timeEditor.setBounds (margin+440, y1,
+                               200, midiHeight - y2 - margin);
     }
 
     void openDevice (bool isInput, int index)
@@ -523,6 +540,10 @@ private:
     TextEditor midiMonitor  { "MIDI Monitor" };
     TextButton pairButton   { "MIDI Bluetooth devices..." };
     TextButton button { "Modify the pairing" };
+    TextEditor noteEditor;
+    TextEditor timeEditor;
+
+    double* noteTimings;
 
     AudioFileReaderComponent<GainDemoDSP> fileReaderComponent;
     std::unique_ptr<MidiDeviceListBox> midiInputSelector, midiOutputSelector;
