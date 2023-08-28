@@ -90,6 +90,7 @@ public:
         addAndMakeVisible (button);
         addAndMakeVisible (noteEditor);
         addAndMakeVisible (title);
+        addAndMakeVisible (randomizerButton);
 
         midiMonitor.setMultiLine (true);
         midiMonitor.setReturnKeyStartsNewLine (false);
@@ -121,6 +122,11 @@ public:
             this->noteTimings[this->noteSelected] = this->fileReaderComponent.getRelativePosition();            
             cout << this->noteTimings[this->noteSelected] << endl;
             };
+        randomizerButton.onClick = [this] {
+            for (int i = 0; i < 127; i++){
+                this->noteTimings[i] = (double)(rand() % 100) / 100;
+            }
+        };
         keyboardState.addListener (this);
 
         // addAndMakeVisible (midiInputSelector .get());
@@ -217,7 +223,9 @@ public:
     // button.setBounds (margin, y1,
     //                            200, midiHeight - y2 - margin);
     button.setBounds (margin, y1,
-                              getWidth() - (2 * margin), 24);
+                              getWidth()/2 - (2 * margin), 24);
+    randomizerButton.setBounds (margin+getWidth()/2, y1,
+                              getWidth()/2 - (2 * margin), 24);
 
         
     noteEditor.setBounds (margin, (midiHeight / 3) + (margin - 15),
@@ -515,6 +523,7 @@ private:
     TextEditor midiMonitor  { "MIDI Monitor" };
     TextButton pairButton   { "MIDI Bluetooth devices..." };
     TextButton button { "Modify the pairing" };
+    TextButton randomizerButton { "Randomize" };
     Label noteEditor;
     Label title;
     int noteSelected;
