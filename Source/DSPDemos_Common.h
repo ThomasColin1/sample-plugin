@@ -3,17 +3,7 @@
 
    This file is part of the JUCE examples.
    Copyright (c) 2022 - Raw Material Software Limited
-
-   The code included in this file is provided under the terms of the ISC license
-   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
-   To use, copy, modify, and/or distribute this software for any purpose with or
-   without fee is hereby granted provided that the above copyright notice and
-   this permission notice appear in all copies.
-
-   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES,
-   WHETHER EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR
-   PURPOSE, ARE DISCLAIMED.
-
+   
   ==============================================================================
 */
 
@@ -52,6 +42,7 @@ struct SliderParameter   : public DSPDemoParameterBase
 
         if (suffix.isNotEmpty())
             slider.setTextValueSuffix (suffix);
+        slider.setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
 
         slider.onValueChange = [this] { sendChangeMessage(); };
     }
@@ -104,6 +95,14 @@ public:
           thumbnail (128, afm, thumbnailCache)
     {
         thumbnail.addChangeListener (this);
+        
+        addAndMakeVisible (noteEditor);
+        
+        this->resized();
+    }
+    void resized() override
+    {
+        noteEditor.setBounds(10,0,100,20);
     }
 
     ~AudioThumbnailComponent() override
@@ -114,6 +113,9 @@ public:
     void paint (Graphics& g) override
     {
         g.fillAll (Colour (0xff495358));
+        
+        
+        g.fillAll (juce::Colour(35,35,45));
 
         g.setColour (Colours::white);
 
@@ -131,6 +133,7 @@ public:
             g.drawFittedText ("No audio file loaded.\nDrop a file here or click the \"Load File...\" button.", getLocalBounds(),
                               Justification::centred, 2);
         }
+
     }
 
     bool isInterestedInFileDrag (const StringArray&) override          { return true; }
@@ -166,6 +169,7 @@ private:
     AudioThumbnailCache thumbnailCache;
     AudioThumbnail thumbnail;
     AudioTransportSource* transportSource = nullptr;
+    Label noteEditor;
 
     URL currentURL;
     double currentPosition = 0.0;
@@ -214,6 +218,7 @@ private:
 
             transportSource->setPosition ((jmax (static_cast<double> (e.x), 0.0) / getWidth())
                                             * thumbnail.getTotalLength());
+            noteEditor.setText(String(jmax (static_cast<double> (e.x), 0.0) / getWidth()), juce::dontSendNotification);
         }
     }
 };
@@ -371,6 +376,9 @@ public:
     {
         g.setColour (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
         g.fillRect (getLocalBounds());
+        
+        
+        g.fillAll (juce::Colour(18,18,22));
     }
 
     void resized() override
@@ -488,6 +496,10 @@ public:
         transportSource->start();
         playState = true;
     }
+    
+    double getRelativePosition() {
+        return transportSource->getCurrentPosition() / transportSource->getLengthInSeconds();
+    }
 
     void setLooping (bool shouldLoop)
     {
@@ -527,24 +539,50 @@ private:
         {
             setOpaque (true);
 
+            addAndMakeVisible(loadLabel);
+            addAndMakeVisible(playLabel);
+
             addAndMakeVisible (loadButton);
             addAndMakeVisible (playButton);
             addAndMakeVisible (loopButton);
+            playButton.setColour (TextButton::buttonColourId, Colours::transparentBlack);
+            playButton.setColour (TextButton::textColourOffId, Colours::white);
+            playButton.setColour (ComboBox::outlineColourId, Colours::transparentBlack);
 
-            playButton.setColour (TextButton::buttonColourId, Colour (0xff79ed7f));
-            playButton.setColour (TextButton::textColourOffId, Colours::black);
-
-            loadButton.setColour (TextButton::buttonColourId, Colour (0xff797fed));
-            loadButton.setColour (TextButton::textColourOffId, Colours::black);
+            loadButton.setColour (TextButton::buttonColourId, Colours::transparentBlack);
+            loadButton.setColour (TextButton::textColourOffId, Colours::white);
+            loadButton.setColour (ComboBox::outlineColourId, Colours::transparentBlack);
 
             loadButton.onClick = [this] { openFile(); };
+            loadButton.onStateChange = [this] { 
+                if (this->loadButton.isOver()){
+                    loadLabel.setColour (Label::textColourId, Colour(239,84,102));
+                } else {
+                    loadLabel.setColour(Label::textColourId, Colour(255,255,255));
+                }
+            };
             playButton.onClick = [this] { audioFileReader.togglePlay(); };
+            playButton.onStateChange = [this] { 
+                if (this->playButton.isOver()){
+                    playLabel.setColour (Label::textColourId, Colour(239,84,102));
+                } else {
+                    playLabel.setColour(Label::textColourId, Colour(255,255,255));
+                }
+            };
+            loadLabel.setText("Load File", dontSendNotification);
+            loadLabel.setFont (Font (25.0f, Font::bold));
+            loadLabel.setColour(Label::textColourId, Colour(255,255,255));
+            playLabel.setText("Play", dontSendNotification);
+            playLabel.setFont (Font (25.0f, Font::bold));
+            playLabel.setColour(Label::textColourId, Colour(255,255,255));
 
             addAndMakeVisible (thumbnailComp);
             thumbnailComp.addChangeListener (this);
 
             audioFileReader.playState.addListener (this);
             loopButton.getToggleStateValue().referTo (audioFileReader.loopState);
+            
+
         }
 
         ~AudioPlayerHeader() override
@@ -556,6 +594,8 @@ private:
         {
             g.setColour (getLookAndFeel().findColour (ResizableWindow::backgroundColourId).darker());
             g.fillRect (getLocalBounds());
+            
+            g.fillAll (juce::Colour(18,18,22));
         }
 
         void resized() override
@@ -567,6 +607,11 @@ private:
 
             loadButton.setBounds (buttonBounds.removeFromTop (buttonBounds.getHeight() / 2));
             playButton.setBounds (buttonBounds);
+
+            loadLabel.setBounds (20,0,loadButton.getWidth(),loadButton.getHeight());
+            // loadLabel.setJustificationType(Justification(Justification::horizontallyCentred));
+            playLabel.setBounds (20,loadButton.getHeight(),playButton.getWidth(),playButton.getHeight());
+            // playLabel.setJustificationType(Justification(Justification::horizontallyCentred));
 
             loopButton.setSize (0, 25);
             loopButton.changeWidthToFitText();
@@ -631,12 +676,13 @@ private:
 
         void valueChanged (Value& v) override
         {
-            playButton.setButtonText (v.getValue() ? "Stop" : "Play");
-            playButton.setColour (TextButton::buttonColourId, v.getValue() ? Colour (0xffed797f) : Colour (0xff79ed7f));
+            playLabel.setText (v.getValue() ? "Stop" : "Play", dontSendNotification);
+            // playButton.setColour (TextButton::buttonColourId, v.getValue() ? Colour (0xffed797f) : Colour (0xff79ed7f));
         }
 
         //==============================================================================
-        TextButton loadButton { "Load File..." }, playButton { "Play" };
+        TextButton loadButton {""}, playButton{""};
+        Label loadLabel, playLabel;
         ToggleButton loopButton { "Loop File" };
 
         AudioFileReaderComponent& audioFileReader;

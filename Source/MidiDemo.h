@@ -4,47 +4,8 @@
    This file is part of the JUCE examples.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   The code included in this file is provided under the terms of the ISC license
-   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
-   To use, copy, modify, and/or distribute this software for any purpose with or
-   without fee is hereby granted provided that the above copyright notice and
-   this permission notice appear in all copies.
-
-   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES,
-   WHETHER EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR
-   PURPOSE, ARE DISCLAIMED.
-
   ==============================================================================
 */
-
-/*******************************************************************************
- The block below describes the properties of this PIP. A PIP is a short snippet
- of code that can be read by the Projucer and used to generate a JUCE project.
-
- BEGIN_JUCE_PIP_METADATA
-
- name:             MidiDemo
- version:          1.0.0
- vendor:           JUCE
- website:          http://juce.com
- description:      Handles incoming and outcoming midi messages.
-
- dependencies:     juce_audio_basics, juce_audio_devices, juce_audio_formats,
-                   juce_audio_processors, juce_audio_utils, juce_core,
-                   juce_data_structures, juce_events, juce_graphics,
-                   juce_gui_basics, juce_gui_extra
- exporters:        xcode_mac, vs2022, linux_make, androidstudio, xcode_iphone
-
- moduleFlags:      JUCE_STRICT_REFCOUNTEDPOINTER=1
-
- type:             Component
- mainClass:        MidiDemo
-
- useLocalCopy:     1
-
- END_JUCE_PIP_METADATA
-
-*******************************************************************************/
 
 #pragma once
 #include "DemoUtilities.h"
@@ -119,8 +80,8 @@ public:
         addAndMakeVisible (fileReaderComponent);
 
         
-        addLabelAndSetStyle (midiInputLabel);
-        addLabelAndSetStyle (midiOutputLabel);
+        // addLabelAndSetStyle (midiInputLabel);
+        // addLabelAndSetStyle (midiOutputLabel);
         // addLabelAndSetStyle (incomingMidiLabel);
         // addLabelAndSetStyle (outgoingMidiLabel);
 
@@ -128,7 +89,7 @@ public:
         addAndMakeVisible (midiKeyboard);
         addAndMakeVisible (button);
         addAndMakeVisible (noteEditor);
-        addAndMakeVisible (timeEditor);
+        addAndMakeVisible (title);
 
         midiMonitor.setMultiLine (true);
         midiMonitor.setReturnKeyStartsNewLine (false);
@@ -142,7 +103,7 @@ public:
         if (! BluetoothMidiDevicePairingDialogue::isAvailable())
             pairButton.setEnabled (false);
 
-        addAndMakeVisible (pairButton);
+        // addAndMakeVisible (pairButton);
         pairButton.onClick = []
         {
             RuntimePermissions::request (RuntimePermissions::bluetoothMidi,
@@ -153,14 +114,21 @@ public:
                                          });
         };
         button.onClick = [this] { 
-            cout << "clické" << endl; 
-            this->noteTimings[this->noteEditor.getText().getIntValue()] = this->timeEditor.getText().getDoubleValue();
+            // cout << this->fileReaderComponent.getRelativePosition() << endl; 
+            cout << this->noteSelected << endl;
+            cout << this->noteTimings[this->noteSelected] << endl;
+            // this->noteTimings[this->noteEditor.getText().getIntValue()] = this->timeEditor.getText().getDoubleValue();
+            this->noteTimings[this->noteSelected] = this->fileReaderComponent.getRelativePosition();            
+            cout << this->noteTimings[this->noteSelected] << endl;
             };
         keyboardState.addListener (this);
 
-        addAndMakeVisible (midiInputSelector .get());
-        addAndMakeVisible (midiOutputSelector.get());
+        // addAndMakeVisible (midiInputSelector .get());
+        // addAndMakeVisible (midiOutputSelector.get());
 
+        title.setText("SAMPLER", dontSendNotification);
+        title.setFont (Font (35.0f, Font::bold));
+        title.setColour(Label::textColourId, Colour(255,255,255));
         
 
         setSize (732, 500);
@@ -193,7 +161,8 @@ public:
         fileReaderComponent.goToRelativePosition(noteTimings[midiNoteNumber]);
         fileReaderComponent.play();
         cout << midiNoteNumber << endl;
-        this->noteEditor.setText(String(midiNoteNumber));
+        this->noteEditor.setText("Note pressed : "+String(midiNoteNumber), juce::dontSendNotification);
+        this->noteSelected = midiNoteNumber;
         //this->timeEditor.setText(String(this->fileReaderComponent.getTime()));
         m.setTimeStamp (Time::getMillisecondCounterHiRes() * 0.001);
         sendToOutputs (m);
@@ -207,10 +176,14 @@ public:
         sendToOutputs (m);
     }
 
-    void paint (Graphics&) override {}
+    void paint (Graphics& g) override {
+        g.fillAll (juce::Colour(18,18,22));
+    }
 
     void resized() override
     {
+        title.setBounds(0,0,getWidth(),80);
+        title.setJustificationType(Justification(Justification::horizontallyCentred));
         auto margin = 10;
         fileReaderComponent.setBounds(0,getHeight()-200, getWidth(),200);
         auto midiHeight=getHeight()-200;
@@ -241,12 +214,14 @@ public:
         auto y2 = (midiHeight / 3) + ((2 * 24) + (3 * margin) + 64);
         midiMonitor.setBounds (margin, y1,
                                getWidth() - (2 * margin), midiHeight - y2 - margin-50);
+    // button.setBounds (margin, y1,
+    //                            200, midiHeight - y2 - margin);
     button.setBounds (margin, y1,
-                               200, midiHeight - y2 - margin);
-    noteEditor.setBounds (margin+220, y1,
-                               200, midiHeight - y2 - margin);
-    timeEditor.setBounds (margin+440, y1,
-                               200, midiHeight - y2 - margin);
+                              getWidth() - (2 * margin), 24);
+
+        
+    noteEditor.setBounds (margin, (midiHeight / 3) + (margin - 15),
+                               200, 50);
     }
 
     void openDevice (bool isInput, int index)
@@ -540,10 +515,12 @@ private:
     TextEditor midiMonitor  { "MIDI Monitor" };
     TextButton pairButton   { "MIDI Bluetooth devices..." };
     TextButton button { "Modify the pairing" };
-    TextEditor noteEditor;
-    TextEditor timeEditor;
+    Label noteEditor;
+    Label title;
+    int noteSelected;
 
     double* noteTimings;
+    
 
     AudioFileReaderComponent<GainDemoDSP> fileReaderComponent;
     std::unique_ptr<MidiDeviceListBox> midiInputSelector, midiOutputSelector;
